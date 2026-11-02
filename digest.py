@@ -1043,7 +1043,7 @@ def run(dry_run: bool = False, articles: list[Article] | None = None, now: datet
 # Web page (GitHub Pages) — latest digest + archive, for embedding in Google Sites
 # ===========================================================================
 NAV_BAR = ('<div style="max-width:760px;margin:0 auto;padding:14px 12px 0 12px;font-family:Outfit,\'Segoe UI\',Roboto,'
-           'Arial,sans-serif;font-size:13px;text-align:right;"><a href="{href}" target="_top" style="color:#0a8a76;'
+           'Arial,sans-serif;font-size:13px;text-align:right;"><a href="{href}" target="_self" style="color:#0a8a76;'
            'text-decoration:none;font-weight:500;">{label}</a></div>')
 
 
@@ -1074,7 +1074,7 @@ def publish_web_page(html_body: str, now: datetime, web_dir: Path) -> None:
         '<div style="font-family:Outfit,Segoe UI,Arial,sans-serif;font-size:12px;letter-spacing:1.8px;text-transform:uppercase;color:#0a8a76;font-weight:600;">Weekly Reading · India Power Sector</div>'
         '<div style="font-family:Literata,Georgia,serif;font-size:28px;font-weight:600;margin-top:8px;">Past Digests</div>'
         '<div style="width:44px;height:2px;background:#0a8a76;margin-top:10px;"></div>'
-        '<p style="font-family:Outfit,Segoe UI,Arial,sans-serif;font-size:13px;margin:16px 0 4px;"><a href="../" target="_top" style="color:#0a8a76;text-decoration:none;font-weight:500;">← Latest digest</a></p>'
+        '<p style="font-family:Outfit,Segoe UI,Arial,sans-serif;font-size:13px;margin:16px 0 4px;"><a href="../" target="_self" style="color:#0a8a76;text-decoration:none;font-weight:500;">← Latest digest</a></p>'
         f'<ul style="list-style:none;padding:0;margin:0;font-family:Literata,Georgia,serif;font-size:17px;">{items}</ul></div></body></html>',
         encoding="utf-8")
     log.info("  web page updated: %s/index.html (+ archive, %d issues)", C.WEB_PAGE_DIR, len(pages))
