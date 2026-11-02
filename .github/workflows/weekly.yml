@@ -1,0 +1,95 @@
+name: Weekly Energy Digest
+
+on:
+  schedule:
+    # Every Monday at 07:45 India time. The run takes ~5-15 minutes, so the
+    # email normally arrives around 8:00 AM. GitHub can start scheduled runs
+    # late (often 5-30 minutes) — this is normal.
+    # The "timezone" key is supported by GitHub since March 2026. If your
+    # runs ever ignore it, delete the timezone line and use the UTC
+    # equivalent instead:  cron: "15 2 * * 1"   (02:15 UTC = 07:45 IST)
+    - cron: "45 7 * * 1"
+      timezone: "Asia/Kolkata"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (build the digest but do NOT send email)"
+        type: boolean
+        default: false
+      smtp_test:
+        description: "Only test Gmail login (sends a one-line test email)"
+        type: boolean
+        default: false
+
+# Only one digest run at a time; a second run waits instead of overlapping.
+concurrency:
+  group: weekly-energy-digest
+  cancel-in-progress: false
+
+# "contents: write" is needed to save data/history.json and the docs/ web page back to the repo.
+# If you set HISTORY_ENABLED = False in config.py you can change this to "read".
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      TZ: Asia/Kolkata
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run self-tests (offline, ~5 seconds)
+        run: python -m unittest discover -s tests -v
+
+      - name: Test Gmail login only
+        if: ${{ inputs.smtp_test == true }}
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+        run: python digest.py --smtp-test
+
+      - name: Build and send digest
+        if: ${{ inputs.smtp_test != true }}
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+          DRY_RUN: ${{ inputs.dry_run == true && 'true' || 'false' }}
+        run: python digest.py
+
+      - name: Save digest preview and run log
+        if: ${{ always() && inputs.smtp_test != true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ github.run_number }}
+          path: output/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Save history and web page
+        if: ${{ success() && inputs.dry_run != true && inputs.smtp_test != true }}
+        run: |
+          mkdir -p docs
+          if [ -n "$(git status --porcelain data/history.json docs)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/history.json docs
+            git commit -m "Update digest history and web page ($(date +%Y-%m-%d))"
+            git push
+          else
+            echo "History unchanged."
+          fi
