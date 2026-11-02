@@ -28,7 +28,7 @@ MAX_ARTICLES_TO_FETCH = 90        # max article pages downloaded per run
 REQUEST_TIMEOUT = 20              # seconds per HTTP request
 REQUEST_RETRIES = 2               # retries on timeouts / 5xx
 DELAY_BETWEEN_REQUESTS = 1.0      # seconds between article downloads
-DECODE_GOOGLE_NEWS_LINKS = True   # resolve news.google.com links to publisher URLs
+DECODE_GOOGLE_NEWS_LINKS = True   # resolve news.google.com links to publisher URLs (batched, gnews-decoder)
 RESPECT_ROBOTS_TXT = True         # skip pages a site's robots.txt disallows
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -132,6 +132,28 @@ DIRECT_FEEDS = [
     ("ET EnergyWorld — Power", "https://energy.economictimes.indiatimes.com/rss/power"),
     ("Down To Earth — Energy", "https://www.downtoearth.org.in/energy/rss"),
     ("IEA News", "https://www.iea.org/api/rss/news"),
+]
+
+# ---------------------------------------------------------------------------
+# 5b. BING NEWS RSS (second search engine; gives direct publisher links)
+#     Keep queries simple: plain words and "quoted phrases" work best.
+# ---------------------------------------------------------------------------
+BING_NEWS_ENDPOINT = "https://www.bing.com/news/search"
+BING_SEARCHES = [
+    ("DISCOM", 'discom India electricity'),
+    ("DISCOM opinion", 'discoms opinion OR editorial OR analysis power distribution'),
+    ("AT&C losses", '"AT&C losses"'),
+    ("Electricity tariff", '"electricity tariff" India regulatory commission'),
+    ("Smart meters", '"smart prepaid meter" India'),
+    ("RDSS", 'RDSS "Revamped Distribution Sector Scheme"'),
+    ("CERC", 'CERC order electricity'),
+    ("Ministry of Power", '"Ministry of Power" policy'),
+    ("Power procurement", '"power purchase agreement" India discom'),
+    ("Grid & storage", '"battery energy storage" OR "pumped storage" India grid'),
+    ("Peak demand", '"peak demand" India power coal'),
+    ("Electricity Act", '"Electricity Amendment" OR "Electricity Act" India'),
+    ("Bihar power", 'Bihar electricity OR power SBPDCL OR NBPDCL OR BSPHCL'),
+    ("BERC", '"Bihar Electricity Regulatory Commission" OR BERC Bihar tariff'),
 ]
 
 # ---------------------------------------------------------------------------

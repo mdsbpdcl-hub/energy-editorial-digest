@@ -275,6 +275,11 @@ def build_google_news_url(query: str, lang: str = "en", days: int | None = None)
     return C.GOOGLE_NEWS_ENDPOINT + "?" + urlencode({"q": q, **params}, quote_via=quote)
 
 
+def build_bing_news_url(query: str) -> str:
+    params = {"q": query, "format": "rss", "setmkt": "en-IN", "setlang": "en", "qft": 'sortbydate="1"'}
+    return C.BING_NEWS_ENDPOINT + "?" + urlencode(params, quote_via=quote)
+
+
 def parse_feed_entries(parsed, label: str, official: bool = False) -> list[Article]:
     items: list[Article] = []
     for e in parsed.entries:
@@ -282,8 +287,13 @@ def parse_feed_entries(parsed, label: str, official: bool = False) -> list[Artic
         link = (e.get("link") or "").strip()
         if not title or not link:
             continue
+        link = unwrap_bing(link)
         src = e.get("source") or {}
-        publisher = clean_space(src.get("title") if hasattr(src, "get") else "") or clean_space(parsed.feed.get("title", ""))
+        publisher = (clean_space(src.get("title") if hasattr(src, "get") else "")
+                     or clean_space(e.get("news_source", ""))
+                     or clean_space(parsed.feed.get("title", "")))
+        if label.startswith("Bing") and (not publisher or "bing" in publisher.lower()):
+            publisher = host_of(link)
         publisher_site = (src.get("href") if hasattr(src, "get") else "") or ""
         if publisher and title.lower().endswith(" - " + publisher.lower()):
             title = title[: -(len(publisher) + 3)].strip()
@@ -324,6 +334,7 @@ def discover() -> tuple[list[Article], dict]:
     jobs = [(lbl, build_google_news_url(q, lang), False) for lbl, q, lang in C.SEARCHES]
     jobs += [(f"Official: {lbl}", build_google_news_url(q, lang), True) for lbl, q, lang in C.OFFICIAL_SEARCHES]
     jobs += [(f"Feed: {lbl}", url, False) for lbl, url in C.DIRECT_FEEDS]
+    jobs += [(f"Bing: {lbl}", build_bing_news_url(q), False) for lbl, q in C.BING_SEARCHES]
     for label, url, official in jobs:
         items = fetch_feed(url, label, official)
         stats["feeds_ok" if items else "feeds_failed"] += 1
@@ -454,12 +465,48 @@ PAYWALL_CUES = re.compile(
     r"already a subscriber|unlock this (article|story))", re.I)
 
 
+_DECODED: dict[str, str | None] = {}
+
+
+def unwrap_bing(url: str) -> str:
+    """bing.com/news/apiclick.aspx?...&url=<publisher> -> publisher URL."""
+    if host_of(url).endswith("bing.com"):
+        target = dict(parse_qsl(urlsplit(url).query)).get("url")
+        if target and target.startswith("http"):
+            return target
+    return url
+
+
+def batch_decode_google_news(urls: list[str]) -> int:
+    """Decode many news.google.com links in one batched request (handles Google's consent page).
+    Results are cached for resolve_google_news(). Returns how many were resolved."""
+    todo = [u for u in dict.fromkeys(urls) if host_of(u) == "news.google.com" and u not in _DECODED]
+    if not todo or not C.DECODE_GOOGLE_NEWS_LINKS:
+        return 0
+    try:
+        from gnews_decoder import decode_many
+        for start in range(0, len(todo), 40):
+            chunk = todo[start:start + 40]
+            res = decode_many(chunk, ceid="IN:en", concurrency=8, timeout=C.REQUEST_TIMEOUT)
+            for u in chunk:
+                _DECODED[u] = res.get(u)
+            time.sleep(1)
+    except Exception as exc:
+        log.warning("  batch Google News decoding failed: %s", type(exc).__name__)
+    ok = sum(1 for u in todo if _DECODED.get(u))
+    log.info("  Google News links resolved to publishers: %d of %d", ok, len(todo))
+    return ok
+
+
 def resolve_google_news(url: str) -> str | None:
     """news.google.com/rss/articles/... -> publisher URL (None if not possible)."""
+    url = unwrap_bing(url)
     if host_of(url) != "news.google.com":
         return url
     if not C.DECODE_GOOGLE_NEWS_LINKS:
         return None
+    if _DECODED.get(url):
+        return _DECODED[url]
     try:
         from googlenewsdecoder import gnewsdecoder
         res = gnewsdecoder(url, interval=1, timeout=C.REQUEST_TIMEOUT)
@@ -932,6 +979,8 @@ def run(dry_run: bool = False, articles: list[Article] | None = None, now: datet
     log.info("STEP 6 — Verifying article text and word counts")
     articles.sort(key=lambda a: -a.prescore)
     to_fetch = articles[: C.MAX_ARTICLES_TO_FETCH] if verify else []
+    if to_fetch:
+        stats["google_links_resolved"] = batch_decode_google_news([a.link for a in to_fetch])
     status_counts: dict[str, int] = {}
     for i, a in enumerate(to_fetch, 1):
         verify_article(a)
@@ -993,9 +1042,9 @@ def run(dry_run: bool = False, articles: list[Article] | None = None, now: datet
 # ===========================================================================
 # Web page (GitHub Pages) — latest digest + archive, for embedding in Google Sites
 # ===========================================================================
-NAV_BAR = ('<div style="max-width:720px;margin:0 auto;padding:8px 8px 0 8px;font-family:Segoe UI,Roboto,Arial,'
-           'sans-serif;font-size:13px;text-align:right;"><a href="{href}" target="_top" style="color:#0f7c86;">'
-           '{label}</a></div>')
+NAV_BAR = ('<div style="max-width:760px;margin:0 auto;padding:14px 12px 0 12px;font-family:Outfit,\'Segoe UI\',Roboto,'
+           'Arial,sans-serif;font-size:13px;text-align:right;"><a href="{href}" target="_top" style="color:#0a8a76;'
+           'text-decoration:none;font-weight:500;">{label}</a></div>')
 
 
 def _with_nav(html: str, href: str, label: str) -> str:
@@ -1013,18 +1062,20 @@ def publish_web_page(html_body: str, now: datetime, web_dir: Path) -> None:
     (archive / f"{day}.html").write_text(_with_nav(html_body, "./", "← All past digests"), encoding="utf-8")
     pages = sorted((p.stem for p in archive.glob("20*.html")), reverse=True)
     items = "\n".join(
-        f'<li style="padding:6px 0;border-bottom:1px solid #edf0f4;"><a href="{d}.html" style="color:#12355b;'
-        f'text-decoration:none;font-weight:600;">Digest of {datetime.fromisoformat(d).strftime("%d %B %Y")}</a></li>'
+        f'<li style="padding:12px 0;border-bottom:1px solid #e4dccd;"><a href="{d}.html" style="color:#2a251f;'
+        f'text-decoration:none;">Digest of {datetime.fromisoformat(d).strftime("%d %B %Y")}</a></li>'
         for d in pages)
     (archive / "index.html").write_text(
         '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
         'content="width=device-width, initial-scale=1"><title>Energy Digest — Archive</title></head>'
-        '<body style="margin:0;background:#eef1f5;font-family:Segoe UI,Roboto,Arial,sans-serif;">'
-        '<div style="max-width:720px;margin:16px auto;background:#fff;border-radius:6px;overflow:hidden;">'
-        '<div style="background:#12355b;color:#fff;padding:20px 24px;font-size:20px;font-weight:bold;">'
-        'Energy Sector Digest — Archive</div><div style="padding:8px 24px 20px 24px;">'
-        '<p style="font-size:13px;"><a href="../" target="_top" style="color:#0f7c86;">← Latest digest</a></p>'
-        f'<ul style="list-style:none;padding:0;margin:0;font-size:14px;">{items}</ul></div></div></body></html>',
+        '<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">'
+        '<body style="margin:0;background:#f3eee4;color:#2a251f;">'
+        '<div style="max-width:760px;margin:22px auto;background:#fffcf6;border:1px solid #e4dccd;border-radius:14px;padding:30px;">'
+        '<div style="font-family:Outfit,Segoe UI,Arial,sans-serif;font-size:12px;letter-spacing:1.8px;text-transform:uppercase;color:#0a8a76;font-weight:600;">Weekly Reading · India Power Sector</div>'
+        '<div style="font-family:Literata,Georgia,serif;font-size:28px;font-weight:600;margin-top:8px;">Past Digests</div>'
+        '<div style="width:44px;height:2px;background:#0a8a76;margin-top:10px;"></div>'
+        '<p style="font-family:Outfit,Segoe UI,Arial,sans-serif;font-size:13px;margin:16px 0 4px;"><a href="../" target="_top" style="color:#0a8a76;text-decoration:none;font-weight:500;">← Latest digest</a></p>'
+        f'<ul style="list-style:none;padding:0;margin:0;font-family:Literata,Georgia,serif;font-size:17px;">{items}</ul></div></body></html>',
         encoding="utf-8")
     log.info("  web page updated: %s/index.html (+ archive, %d issues)", C.WEB_PAGE_DIR, len(pages))
 
