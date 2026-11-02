@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>Energy Editorial &amp; Policy Digest</title>
+<base target="_blank">
 <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 {#- =====================================================================
@@ -33,12 +34,12 @@
 {#- One article: title, first summary point, grey meta line -#}
 {%- macro item(a, big=false, show_cat=true, last=false) -%}
 <div style="padding:{{ '22px 0' if big else '18px 0' }};{% if not last %}border-bottom:1px solid {{ T.line }};{% endif %}">
-  <a href="{{ a.url }}" style="font-family:{{ T.serif }};font-size:{{ '21px' if big else '18px' }};line-height:1.4;font-weight:600;color:{{ T.ink }};text-decoration:none;">{{ a.title }}</a>
+  <a href="{{ a.url }}" target="_blank" rel="noopener" style="font-family:{{ T.serif }};font-size:{{ '21px' if big else '18px' }};line-height:1.4;font-weight:600;color:{{ T.ink }};text-decoration:none;">{{ a.title }}</a>
   {% if a.summary %}
   <div style="font-family:{{ T.serif }};font-size:{{ '17px' if big else '16px' }};line-height:1.75;color:{{ T.soft }};margin-top:8px;">{{ a.summary }}</div>
   {% endif %}
   {{ meta(a, show_cat) }}
-  <a href="{{ a.url }}" style="display:inline-block;margin-top:8px;font-family:{{ T.sans }};font-size:13px;font-weight:600;color:{{ T.accent }};text-decoration:none;">Read &rarr;</a>
+  <a href="{{ a.url }}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-family:{{ T.sans }};font-size:13px;font-weight:600;color:{{ T.accent }};text-decoration:none;">Read &rarr;</a>
 </div>
 {%- endmacro -%}
 
@@ -78,7 +79,7 @@
       {% if bihar %}{% set _ = links.append(("bihar", "Bihar")) %}{% endif %}
       {% if official %}{% set _ = links.append(("official", "Government & Regulatory")) %}{% endif %}
       {% if headline_only %}{% set _ = links.append(("also-noted", "Also Noted")) %}{% endif %}
-      {% for id, label in links %}<a href="#{{ id }}" style="color:{{ T.soft }};text-decoration:none;white-space:nowrap;">{{ label }}</a>{% if not loop.last %} &nbsp;·&nbsp; {% endif %}{% endfor %}
+      {% for id, label in links %}<a href="#{{ id }}" target="_self" style="color:{{ T.soft }};text-decoration:none;white-space:nowrap;">{{ label }}</a>{% if not loop.last %} &nbsp;·&nbsp; {% endif %}{% endfor %}
     </div>
   </td></tr>
   {% endif %}
@@ -111,7 +112,7 @@
   <tr><td style="padding:6px 30px 0 30px;">
     {% for a in bihar %}
     <div style="padding:12px 0;{% if not loop.last %}border-bottom:1px solid {{ T.line }};{% endif %}">
-      <a href="{{ a.url }}" style="font-family:{{ T.serif }};font-size:16.5px;line-height:1.5;color:{{ T.ink }};text-decoration:none;font-weight:500;">{{ a.title }}</a>
+      <a href="{{ a.url }}" target="_blank" rel="noopener" style="font-family:{{ T.serif }};font-size:16.5px;line-height:1.5;color:{{ T.ink }};text-decoration:none;font-weight:500;">{{ a.title }}</a>
       <div style="font-family:{{ T.sans }};font-size:12.5px;color:{{ T.muted }};margin-top:4px;">{{ a.publisher }} &nbsp;·&nbsp; {{ a.date }} &nbsp;·&nbsp; also in {{ a.listed_in }}</div>
     </div>
     {% endfor %}
@@ -124,7 +125,7 @@
   <tr><td style="padding:6px 30px 0 30px;">
     {% for a in official %}
     <div style="padding:12px 0;{% if not loop.last %}border-bottom:1px solid {{ T.line }};{% endif %}">
-      <a href="{{ a.url }}" style="font-family:{{ T.serif }};font-size:16.5px;line-height:1.5;color:{{ T.ink }};text-decoration:none;font-weight:500;">{{ a.title }}</a>
+      <a href="{{ a.url }}" target="_blank" rel="noopener" style="font-family:{{ T.serif }};font-size:16.5px;line-height:1.5;color:{{ T.ink }};text-decoration:none;font-weight:500;">{{ a.title }}</a>
       {% if a.summary %}<div style="font-family:{{ T.serif }};font-size:15.5px;line-height:1.7;color:{{ T.soft }};margin-top:4px;">{{ a.summary }}</div>{% endif %}
       <div style="font-family:{{ T.sans }};font-size:12.5px;color:{{ T.muted }};margin-top:4px;">{{ a.publisher }} &nbsp;·&nbsp; {{ a.date }}{% if a.is_pdf %} &nbsp;·&nbsp; PDF{% endif %}</div>
     </div>
@@ -138,7 +139,7 @@
   <tr><td style="padding:6px 30px 0 30px;">
     {% for a in headline_only %}
     <div style="padding:9px 0;font-family:{{ T.serif }};font-size:15px;line-height:1.55;">
-      <a href="{{ a.url }}" style="color:{{ T.soft }};text-decoration:none;">{{ a.title }}</a>
+      <a href="{{ a.url }}" target="_blank" rel="noopener" style="color:{{ T.soft }};text-decoration:none;">{{ a.title }}</a>
       <span style="font-family:{{ T.sans }};font-size:12px;color:{{ T.muted }};"> — {{ a.publisher }}, {{ a.date }}</span>
     </div>
     {% endfor %}
