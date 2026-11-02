@@ -18,7 +18,8 @@ MAX_SELECTED_ARTICLES = 25        # cap on verified articles in the digest
 MAX_HEADLINE_ONLY = 10            # cap on unverified "also noted" items
 MAX_OFFICIAL_DOCS = 12            # cap on government/regulatory items
 EXEC_OVERVIEW_COUNT = 8           # items in Executive Overview (5-10)
-PRIORITY_ARTICLE_COUNT = 10       # items shown in full detail in Section 2
+PRIORITY_ARTICLE_COUNT = 10       # items shown in full detail in Section 2 (plain-text email)
+START_HERE_COUNT = 3              # top articles shown first ("Start Here"); the rest go into topic chapters
 
 # ---------------------------------------------------------------------------
 # 2. NETWORK BEHAVIOUR (polite, bounded)
