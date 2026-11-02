@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Energy Editorial &amp; Policy Digest</title>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+{#- =====================================================================
+    DAILY DIGEST THEME — book / library reading style.
+    Change colours here only. Accent options (pick one line):
+      Sunrise  #d9661f   Sky  #2f6fd6   Mint  #0a8a76   Lavender  #7a65c2
+    ===================================================================== -#}
+{%- set T = {
+  "page":   "#f3eee4",
+  "paper":  "#fffcf6",
+  "ink":    "#2a251f",
+  "soft":   "#5a5249",
+  "muted":  "#8a8177",
+  "line":   "#e4dccd",
+  "accent": "#0a8a76",
+  "serif":  "Literata,Georgia,'Times New Roman',serif",
+  "sans":   "Outfit,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+} -%}
+
+{%- macro meta(a, show_cat=true) -%}
+<div style="font-family:{{ T.sans }};font-size:12.5px;line-height:19px;color:{{ T.muted }};margin-top:8px;">
+  {% if show_cat %}{{ a.category }} &nbsp;·&nbsp; {% endif %}{{ a.publisher }} &nbsp;·&nbsp; {{ a.date }}{% if a.verified %} &nbsp;·&nbsp; {{ a.words }} words &nbsp;·&nbsp; {{ ((a.words | replace(',', '') | int) / 220) | round(0, 'ceil') | int }} min read{% endif %}{% if a.is_bihar %} &nbsp;·&nbsp; <span style="color:{{ T.accent }};">Bihar</span>{% endif %}
+</div>
+{%- endmacro -%}
+
+{#- One article: title, first summary point, grey meta line -#}
+{%- macro item(a, big=false, show_cat=true, last=false) -%}
+<div style="padding:{{ '22px 0' if big else '18px 0' }};{% if not last %}border-bottom:1px solid {{ T.line }};{% endif %}">
+  <a href="{{ a.url }}" style="font-family:{{ T.serif }};font-size:{{ '21px' if big else '18px' }};line-height:1.4;font-weight:600;color:{{ T.ink }};text-decoration:none;">{{ a.title }}</a>
+  {% if a.summary %}
+  <div style="font-family:{{ T.serif }};font-size:{{ '17px' if big else '16px' }};line-height:1.75;color:{{ T.soft }};margin-top:8px;">{{ a.summary }}</div>
+  {% endif %}
+  {{ meta(a, show_cat) }}
+  <a href="{{ a.url }}" style="display:inline-block;margin-top:8px;font-family:{{ T.sans }};font-size:13px;font-weight:600;color:{{ T.accent }};text-decoration:none;">Read &rarr;</a>
+</div>
+{%- endmacro -%}
+
+{%- macro chapter(id, title, note="") -%}
+<tr><td style="padding:40px 30px 2px 30px;" id="{{ id }}">
+  <a name="{{ id }}"></a>
+  <div style="font-family:{{ T.serif }};font-size:24px;line-height:1.3;font-weight:500;color:{{ T.ink }};">{{ title }}</div>
+  <div style="width:44px;height:2px;background:{{ T.accent }};margin-top:8px;"></div>
+  {% if note %}<div style="font-family:{{ T.sans }};font-size:13px;color:{{ T.muted }};margin-top:8px;">{{ note }}</div>{% endif %}
+</td></tr>
+{%- endmacro -%}
+
+{%- macro slug(text) -%}{{ text | lower | replace(' and ', '-') | replace(' & ', '-') | replace(' ', '-') }}{%- endmacro -%}
+
+<body style="margin:0;padding:0;background:{{ T.page }};color:{{ T.ink }};-webkit-text-size-adjust:100%;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{{ T.page }};">
+<tr><td align="center" style="padding:22px 10px 34px 10px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:760px;background:{{ T.paper }};border:1px solid {{ T.line }};border-radius:14px;">
+
+  <!-- TITLE -->
+  <tr><td style="padding:34px 30px 6px 30px;">
+    <div style="font-family:{{ T.sans }};font-size:12px;letter-spacing:1.8px;text-transform:uppercase;color:{{ T.accent }};font-weight:600;">Weekly Reading · India Power Sector</div>
+    <div style="font-family:{{ T.serif }};font-size:31px;line-height:1.25;font-weight:600;color:{{ T.ink }};margin-top:8px;">Energy Editorial &amp; Policy Digest</div>
+    <div style="font-family:{{ T.serif }};font-size:16px;line-height:1.7;color:{{ T.soft }};margin-top:8px;">
+      {{ period }} &nbsp;—&nbsp; {{ n_selected }} long read{{ '' if n_selected == 1 else 's' }}, {{ n_official }} official publication{{ '' if n_official == 1 else 's' }}{% if n_bihar %}, {{ n_bihar }} on Bihar{% endif %}.
+    </div>
+  </td></tr>
+
+  <!-- CONTENTS -->
+  {% if start_here or chapters or bihar or official %}
+  <tr><td style="padding:14px 30px 0 30px;">
+    <div style="border-top:1px solid {{ T.line }};border-bottom:1px solid {{ T.line }};padding:10px 0;font-family:{{ T.sans }};font-size:13px;line-height:2;color:{{ T.muted }};">
+      <span style="text-transform:uppercase;letter-spacing:1.2px;font-size:11px;margin-right:6px;">Contents</span>
+      {% set links = [] %}
+      {% if start_here %}{% set _ = links.append(("start-here", "Start Here")) %}{% endif %}
+      {% for cat, items in chapters %}{% set _ = links.append((slug(cat), cat)) %}{% endfor %}
+      {% if bihar %}{% set _ = links.append(("bihar", "Bihar")) %}{% endif %}
+      {% if official %}{% set _ = links.append(("official", "Government & Regulatory")) %}{% endif %}
+      {% if headline_only %}{% set _ = links.append(("also-noted", "Also Noted")) %}{% endif %}
+      {% for id, label in links %}<a href="#{{ id }}" style="color:{{ T.soft }};text-decoration:none;white-space:nowrap;">{{ label }}</a>{% if not loop.last %} &nbsp;·&nbsp; {% endif %}{% endfor %}
+    </div>
+  </td></tr>
+  {% endif %}
+
+  {% if not n_selected and not n_official %}
+  <tr><td style="padding:28px 30px 0 30px;font-family:{{ T.serif }};font-size:17px;line-height:1.75;color:{{ T.soft }};">
+    No articles met the selection criteria in the last {{ lookback }} days.{% if n_headline %} A few relevant headlines are listed under Also Noted.{% endif %}
+  </td></tr>
+  {% endif %}
+
+  <!-- START HERE -->
+  {% if start_here %}
+  {{ chapter("start-here", "Start Here", "The most relevant analysis of the week") }}
+  <tr><td style="padding:0 30px;">
+    {% for a in start_here %}{{ item(a, big=true, last=loop.last) }}{% endfor %}
+  </td></tr>
+  {% endif %}
+
+  <!-- TOPIC CHAPTERS -->
+  {% for cat, items in chapters %}
+  {{ chapter(slug(cat), cat) }}
+  <tr><td style="padding:0 30px;">
+    {% for a in items %}{{ item(a, show_cat=false, last=loop.last) }}{% endfor %}
+  </td></tr>
+  {% endfor %}
+
+  <!-- BIHAR -->
+  {% if bihar %}
+  {{ chapter("bihar", "Bihar") }}
+  <tr><td style="padding:6px 30px 0 30px;">
+    {% for a in bihar %}
+    <div style="padding:12px 0;{% if not loop.last %}border-bottom:1px solid {{ T.line }};{% endif %}">
+      <a href="{{ a.url }}" style="font-family:{{ T.serif }};font-size:16.5px;line-height:1.5;color:{{ T.ink }};text-decoration:none;font-weight:500;">{{ a.title }}</a>
+      <div style="font-family:{{ T.sans }};font-size:12.5px;color:{{ T.muted }};margin-top:4px;">{{ a.publisher }} &nbsp;·&nbsp; {{ a.date }} &nbsp;·&nbsp; also in {{ a.listed_in }}</div>
+    </div>
+    {% endfor %}
+  </td></tr>
+  {% endif %}
+
+  <!-- OFFICIAL -->
+  {% if official %}
+  {{ chapter("official", "Government & Regulatory") }}
+  <tr><td style="padding:6px 30px 0 30px;">
+    {% for a in official %}
+    <div style="padding:12px 0;{% if not loop.last %}border-bottom:1px solid {{ T.line }};{% endif %}">
+      <a href="{{ a.url }}" style="font-family:{{ T.serif }};font-size:16.5px;line-height:1.5;color:{{ T.ink }};text-decoration:none;font-weight:500;">{{ a.title }}</a>
+      {% if a.summary %}<div style="font-family:{{ T.serif }};font-size:15.5px;line-height:1.7;color:{{ T.soft }};margin-top:4px;">{{ a.summary }}</div>{% endif %}
+      <div style="font-family:{{ T.sans }};font-size:12.5px;color:{{ T.muted }};margin-top:4px;">{{ a.publisher }} &nbsp;·&nbsp; {{ a.date }}{% if a.is_pdf %} &nbsp;·&nbsp; PDF{% endif %}</div>
+    </div>
+    {% endfor %}
+  </td></tr>
+  {% endif %}
+
+  <!-- ALSO NOTED (low importance) -->
+  {% if headline_only %}
+  {{ chapter("also-noted", "Also Noted", "Headlines whose full text could not be checked") }}
+  <tr><td style="padding:6px 30px 0 30px;">
+    {% for a in headline_only %}
+    <div style="padding:9px 0;font-family:{{ T.serif }};font-size:15px;line-height:1.55;">
+      <a href="{{ a.url }}" style="color:{{ T.soft }};text-decoration:none;">{{ a.title }}</a>
+      <span style="font-family:{{ T.sans }};font-size:12px;color:{{ T.muted }};"> — {{ a.publisher }}, {{ a.date }}</span>
+    </div>
+    {% endfor %}
+  </td></tr>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <tr><td style="padding:40px 30px 30px 30px;">
+    <div style="border-top:1px solid {{ T.line }};padding-top:14px;font-family:{{ T.sans }};font-size:11.5px;line-height:1.7;color:{{ T.muted }};text-align:center;">
+      Long reads are articles of {{ min_words }}+ words chosen for relevance to DISCOMs and power-sector policy. Links open the original publishers.<br>Prepared {{ generated }}.
+    </div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
