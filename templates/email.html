@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energy Sector — Weekly Editorial &amp; Policy Digest</title>
+</head>
+{#- Colours: navy #12355b (headers), teal #0f7c86 (accents), amber #b7791f (Bihar), grey text #4a5568 -#}
+{%- macro chip(text, bg="#e6f2f3", fg="#0f5c63") -%}
+<span style="display:inline-block;background:{{ bg }};color:{{ fg }};font-size:11px;line-height:16px;padding:1px 7px;border-radius:9px;margin:0 4px 3px 0;white-space:nowrap;">{{ text }}</span>
+{%- endmacro -%}
+{%- macro meta_line(a) -%}
+<div style="font-size:12px;color:#5a6577;line-height:18px;margin-top:3px;">
+  <strong style="color:#2d3748;">{{ a.publisher }}</strong> &nbsp;·&nbsp; {{ a.date }}
+  &nbsp;·&nbsp; {% if a.verified %}{{ a.words }} words{% else %}Words: Unknown{% endif %}
+  &nbsp;·&nbsp; Score <strong style="color:#12355b;">{{ a.score }}</strong>/100
+</div>
+{%- endmacro -%}
+{%- macro section_title(num, text) -%}
+<tr><td style="padding:26px 24px 8px 24px;">
+  <div style="font-size:11px;letter-spacing:1.5px;color:#0f7c86;font-weight:bold;text-transform:uppercase;">Section {{ num }}</div>
+  <div style="font-size:18px;color:#12355b;font-weight:bold;border-bottom:2px solid #12355b;padding-bottom:6px;">{{ text }}</div>
+</td></tr>
+{%- endmacro -%}
+<body style="margin:0;padding:0;background:#eef1f5;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#2d3748;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f5;">
+<tr><td align="center" style="padding:16px 8px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;background:#ffffff;border-radius:6px;overflow:hidden;">
+
+  <!-- HEADER -->
+  <tr><td style="background:#12355b;padding:22px 24px;">
+    <div style="font-size:11px;letter-spacing:2px;color:#9fc5d9;text-transform:uppercase;">Weekly reading brief · India power sector</div>
+    <div style="font-size:21px;line-height:28px;color:#ffffff;font-weight:bold;margin-top:4px;">ENERGY SECTOR — WEEKLY EDITORIAL &amp; POLICY DIGEST</div>
+    <div style="font-size:13px;color:#d6e4ee;margin-top:6px;">Reporting period: {{ period }}</div>
+  </td></tr>
+
+  <!-- KPI STRIP -->
+  <tr><td style="padding:14px 16px 4px 16px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      {% for label, value in [("Verified long-form", eligible), ("Selected analyses", n_selected), ("Govt / regulatory", n_official), ("Bihar-related", n_bihar)] %}
+      <td width="25%" style="padding:4px;">
+        <div style="background:#f4f7fa;border-top:3px solid {{ '#b7791f' if loop.last else '#0f7c86' }};padding:10px 6px;text-align:center;">
+          <div style="font-size:22px;font-weight:bold;color:#12355b;">{{ value }}</div>
+          <div style="font-size:11px;color:#5a6577;">{{ label }}</div>
+        </div>
+      </td>
+      {% endfor %}
+    </tr></table>
+    {% if distribution %}
+    <div style="padding:8px 4px 0 4px;font-size:12px;color:#4a5568;">
+      <strong>Topic distribution:</strong>
+      {% for cat, n in distribution %}{{ chip(cat ~ " · " ~ n) }}{% endfor %}
+    </div>
+    {% endif %}
+    <div style="padding:6px 4px 0 4px;font-size:11px;color:#718096;">
+      "Verified long-form" = articles whose body text was extracted and counted at ≥ {{ min_words }} words.
+      Selection threshold: score ≥ {{ threshold }}/100.
+    </div>
+  </td></tr>
+
+  {% if not n_selected and not n_official %}
+  <tr><td style="padding:20px 24px;">
+    <div style="background:#fff8e6;border-left:4px solid #b7791f;padding:12px 14px;font-size:14px;">
+      No articles met the selection criteria in the last {{ lookback }} days.
+      {% if n_headline %}Some relevant headlines whose text could not be verified are listed at the end.{% endif %}
+    </div>
+  </td></tr>
+  {% endif %}
+
+  <!-- SECTION 1 -->
+  {% if overview %}
+  {{ section_title(1, "Executive Overview") }}
+  <tr><td style="padding:4px 24px 0 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    {% for a in overview %}
+      <tr><td valign="top" style="width:26px;padding:7px 0;font-weight:bold;color:#0f7c86;font-size:14px;">{{ loop.index }}.</td>
+          <td style="padding:7px 0;border-bottom:1px solid #edf0f4;font-size:14px;line-height:20px;">
+            <a href="{{ a.url }}" style="color:#12355b;text-decoration:none;font-weight:600;">{{ a.title }}</a>
+            <div style="font-size:12px;color:#5a6577;">{{ a.publisher }} · {{ a.category }}{% if a.is_bihar %} · <span style="color:#b7791f;font-weight:bold;">Bihar</span>{% endif %}</div>
+          </td></tr>
+    {% endfor %}
+    </table>
+  </td></tr>
+  {% endif %}
+
+  <!-- SECTION 2 -->
+  {% if priority %}
+  {{ section_title(2, "Priority Articles") }}
+  {% for a in priority %}
+  <tr><td style="padding:8px 24px;">
+    <div style="border:1px solid #e2e8f0;border-left:4px solid {{ '#b7791f' if a.is_bihar else '#0f7c86' }};border-radius:4px;padding:12px 14px;">
+      <a href="{{ a.url }}" style="font-size:16px;line-height:22px;color:#12355b;font-weight:bold;text-decoration:none;">{{ a.title }}</a>
+      {{ meta_line(a) }}
+      <div style="margin-top:6px;">{% for t in a.tags %}{{ chip(t, "#fdf3e1", "#8a5a12") if t == "Bihar Power Sector" else chip(t) }}{% endfor %}</div>
+      {% if a.summary %}
+      <div style="font-size:14px;line-height:21px;color:#2d3748;margin-top:6px;">{{ a.summary }}</div>
+      <div style="font-size:10px;color:#a0aec0;">Description as published by the source.</div>
+      {% else %}
+      <div style="font-size:13px;color:#718096;font-style:italic;margin-top:6px;">No publisher description available — open the article to read.</div>
+      {% endif %}
+      {% if a.why %}<div style="font-size:12px;line-height:18px;color:#4a5568;margin-top:6px;background:#f7fafc;padding:6px 8px;">{{ a.why }}</div>{% endif %}
+      <div style="font-size:11px;color:#a0aec0;margin-top:5px;">Score: relevance {{ a.breakdown.relevance }}/30 · depth {{ a.breakdown.depth }}/25 · policy {{ a.breakdown.policy }}/20 · DISCOM {{ a.breakdown.discom }}/15 · source {{ a.breakdown.source }}/10{% if a.breakdown.bihar_bonus %} · Bihar +{{ a.breakdown.bihar_bonus }}{% endif %}</div>
+    </div>
+  </td></tr>
+  {% endfor %}
+  {% endif %}
+
+  <!-- SECTION 3 -->
+  {% if by_category %}
+  {{ section_title(3, "Category-wise Reading List") }}
+  {% for cat, items in by_category %}
+  <tr><td style="padding:6px 24px 2px 24px;">
+    <div style="font-size:14px;font-weight:bold;color:#0f7c86;margin-top:6px;">{{ cat }}</div>
+    {% for a in items %}
+    <div style="padding:6px 0;border-bottom:1px solid #edf0f4;">
+      <a href="{{ a.url }}" style="font-size:14px;color:#12355b;text-decoration:none;font-weight:600;">{{ a.title }}</a>
+      {{ meta_line(a) }}
+    </div>
+    {% endfor %}
+  </td></tr>
+  {% endfor %}
+  {% endif %}
+
+  <!-- SECTION 4 -->
+  {{ section_title(4, "Bihar-specific Coverage") }}
+  <tr><td style="padding:4px 24px;">
+    {% if bihar %}
+    {% for a in bihar %}
+    <div style="padding:6px 0 6px 10px;border-left:3px solid #b7791f;margin-bottom:6px;">
+      <a href="{{ a.url }}" style="font-size:14px;color:#12355b;text-decoration:none;font-weight:600;">{{ a.title }}</a>
+      {{ meta_line(a) }}
+      <div style="font-size:11px;color:#8a5a12;">Listed in: {{ a.listed_in }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="font-size:13px;color:#718096;">No Bihar power-sector article met the criteria this week.</div>
+    {% endif %}
+  </td></tr>
+
+  <!-- SECTION 5 -->
+  {{ section_title(5, "Government & Regulatory Publications") }}
+  <tr><td style="padding:4px 24px;">
+    {% if official %}
+    {% for a in official %}
+    <div style="padding:7px 0;border-bottom:1px solid #edf0f4;">
+      <a href="{{ a.url }}" style="font-size:14px;color:#12355b;text-decoration:none;font-weight:600;">{{ a.title }}</a>
+      {% if a.is_pdf %}{{ chip("PDF", "#e8ecf4", "#12355b") }}{% endif %}
+      {{ meta_line(a) }}
+      {% if a.summary %}<div style="font-size:13px;color:#4a5568;margin-top:3px;">{{ a.summary }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="font-size:13px;color:#718096;">No new government or regulatory publication was identified this week.</div>
+    {% endif %}
+  </td></tr>
+
+  <!-- ALSO NOTED -->
+  {% if headline_only %}
+  <tr><td style="padding:22px 24px 4px 24px;">
+    <div style="font-size:14px;font-weight:bold;color:#12355b;">Also noted — headline only</div>
+    <div style="font-size:11px;color:#718096;margin-bottom:4px;">Relevant headlines whose full text could not be verified (paywall, blocked page, or unresolved link). Word count unknown; not counted as long-form.</div>
+    {% for a in headline_only %}
+    <div style="padding:5px 0;border-bottom:1px solid #edf0f4;font-size:13px;">
+      <a href="{{ a.url }}" style="color:#12355b;text-decoration:none;">{{ a.title }}</a>
+      <span style="color:#718096;font-size:12px;"> — {{ a.publisher }}, {{ a.date }} ({{ a.status }})</span>
+    </div>
+    {% endfor %}
+  </td></tr>
+  {% endif %}
+
+  <!-- SECTION 6 -->
+  {% if all_links %}
+  {{ section_title(6, "Full Reading Links") }}
+  <tr><td style="padding:4px 24px;">
+    <ol style="margin:0;padding-left:20px;font-size:12px;line-height:19px;color:#4a5568;">
+    {% for a in all_links %}
+      <li><a href="{{ a.url }}" style="color:#0f7c86;">{{ a.title }}</a> — {{ a.publisher }}</li>
+    {% endfor %}
+    </ol>
+  </td></tr>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <tr><td style="padding:24px;font-size:11px;line-height:17px;color:#718096;border-top:1px solid #e2e8f0;">
+    Generated automatically on {{ generated }} by GitHub Actions. Sources: Google News RSS, official websites and publisher feeds.
+    Links go to the original publishers; no article text is reproduced. Descriptions are the publishers' own metadata;
+    "topics found" lines list keywords detected in the article text. Scores are keyword-based and indicative.
+    {% if stats.pages_checked is defined %}<br>Run: {{ stats.discovered }} discovered · {{ stats.after_dedup }} unique · {{ stats.pages_checked }} pages checked · {{ stats.word_count_verified }} word counts verified.{% endif %}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
