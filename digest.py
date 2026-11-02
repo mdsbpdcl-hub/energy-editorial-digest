@@ -722,6 +722,7 @@ def article_view(a: Article) -> dict:
         "verified": a.verified, "score": a.score, "breakdown": a.breakdown,
         "summary": a.summary_text(), "why": relevance_note(a), "is_bihar": a.is_bihar,
         "is_pdf": a.is_pdf, "status": a.extract_status.replace("_", " "),
+        "topics": [t.upper() if len(t) <= 4 else t for t in a.matched_terms[:4]],
     }
 
 
@@ -737,10 +738,9 @@ def build_context(buckets: dict, stats: dict, now: datetime) -> dict:
     dist: dict[str, int] = {}
     for a in selected:
         dist[a.category] = dist.get(a.category, 0) + 1
-    where = {id(a): "Priority Articles" for a in priority}
-    where.update({id(a): "Category Reading List" for a in rest})
+    where = {id(a): (a.category if i >= C.START_HERE_COUNT else "Start Here") for i, a in enumerate(selected)}
     where.update({id(a): "Government & Regulatory" for a in official})
-    where.update({id(a): "Also Noted (headline only)" for a in headline})
+    where.update({id(a): "Also Noted" for a in headline})
     bihar = [dict(article_view(a), listed_in=where[id(a)])
              for a in (selected + official + headline) if a.is_bihar]
     start = now - timedelta(days=C.LOOKBACK_DAYS)
@@ -761,6 +761,10 @@ def build_context(buckets: dict, stats: dict, now: datetime) -> dict:
         "official": [article_view(a) for a in official],
         "headline_only": [article_view(a) for a in headline],
         "all_links": [article_view(a) for a in selected + official],
+        "start_here": [article_view(a) for a in selected[:C.START_HERE_COUNT]],
+        "chapters": [(c, [article_view(a) for a in selected[C.START_HERE_COUNT:] if a.category == c])
+                     for c in C.CATEGORIES
+                     if any(a.category == c for a in selected[C.START_HERE_COUNT:])],
         "min_words": C.MIN_WORD_COUNT,
         "threshold": C.SELECTION_THRESHOLD,
         "lookback": C.LOOKBACK_DAYS,
