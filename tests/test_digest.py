@@ -102,6 +102,43 @@ class TestQueryAndFeeds(unittest.TestCase):
             self.assertEqual(D.fetch_feed("https://x", "empty"), [])
 
 
+BING_FEED = """<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:News="https://www.bing.com/news/search?q=discom&amp;format=rss"><channel>
+<title>discom - BingNews</title>
+<item><title>Why discoms must fix tariff design</title>
+<link>http://www.bing.com/news/apiclick.aspx?ref=FexRss&amp;aid=&amp;tid=abc&amp;url=https%3a%2f%2fwww.thehindu.com%2fopinion%2fdiscom-tariff%2farticle1.ece&amp;c=123&amp;mkt=en-in</link>
+<description>An editorial on DISCOM tariff design and subsidies.</description>
+<pubDate>Fri, 30 Oct 2026 04:00:00 GMT</pubDate>
+<News:Source>The Hindu</News:Source></item>
+</channel></rss>"""
+
+
+class TestBingAndDecoding(unittest.TestCase):
+    def test_bing_feed_gives_publisher_link(self):
+        items = D.parse_feed_entries(feedparser.parse(BING_FEED), "Bing: DISCOM")
+        self.assertEqual(len(items), 1)
+        a = items[0]
+        self.assertEqual(a.link, "https://www.thehindu.com/opinion/discom-tariff/article1.ece")
+        self.assertEqual(a.publisher, "The Hindu")
+        self.assertIn("tariff design", a.rss_description)
+
+    def test_bing_url_built(self):
+        q = parse_qs(urlsplit(D.build_bing_news_url('"AT&C losses"')).query)
+        self.assertEqual(q["format"][0], "rss")
+        self.assertEqual(q["q"][0], '"AT&C losses"')
+
+    def test_batch_decode_used_by_resolver(self):
+        g1, g2 = "https://news.google.com/rss/articles/AAA?oc=5", "https://news.google.com/rss/articles/BBB?oc=5"
+        fake = mock.MagicMock(return_value={g1: "https://mercomindia.com/x", g2: None})
+        with mock.patch.dict(sys.modules, {"gnews_decoder": mock.MagicMock(decode_many=fake)}), \
+             mock.patch.object(D.time, "sleep"):
+            D._DECODED.clear()
+            self.assertEqual(D.batch_decode_google_news([g1, g2, "https://direct.in/a"]), 1)
+        self.assertEqual(D.resolve_google_news(g1), "https://mercomindia.com/x")
+        self.assertEqual(D.resolve_google_news("https://direct.in/a"), "https://direct.in/a")
+        D._DECODED.clear()
+
+
 class TestFilters(unittest.TestCase):
     def test_window(self):
         self.assertTrue(D.in_window(make(), NOW, 7))
